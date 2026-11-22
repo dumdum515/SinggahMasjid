@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">SinggahMasjid</string>
+    <string name="tagline">Temukan Masjid Terdekat &amp; Cek Fasilitas Ramah Musafir</string>
+    <string name="sign_in_google">Masuk dengan Google</string>
+    <string name="sign_out">Keluar Akun</string>
+    <string name="nav_explore">Jelajah</string>
+    <string name="nav_map">Peta</string>
+    <string name="nav_favorites">Favorit</string>
+    <string name="nav_profile">Profil</string>
+    <string name="search_mosque_hint">Cari nama masjid atau jalan...</string>
+    <string name="add_mosque">Tambah Masjid</string>
+    <string name="rate_facilities">Beri Rating &amp; Fasilitas</string>
+    <string name="open_maps_route">Rute Maps</string>
+    <string name="save_review">Simpan Rating &amp; Ulasan</string>
+</resources>

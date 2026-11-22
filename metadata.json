@@ -1,0 +1,8 @@
+{
+  "name": "Remix SinggahMasjid",
+  "description": "Temukan masjid terdekat dari lokasi Anda, filter fasilitas ramah musafir, dan berikan rating serta ulasan fasilitas masjid.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

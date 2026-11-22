@@ -1,0 +1,165 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidFacilityList(listVal) {
+      return listVal is list &&
+             listVal.size() <= 20 &&
+             (listVal.size() == 0 || (listVal[0] is string && listVal[0].size() >= 1 && listVal[0].size() <= 40));
+    }
+
+    // Entity Validators
+    function isValidCustomMosque(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60 &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+             data.address is string && data.address.size() <= 250 &&
+             (data.lat is float || data.lat is int) && data.lat >= -90 && data.lat <= 90 &&
+             (data.lon is float || data.lon is int) && data.lon >= -180 && data.lon <= 180 &&
+             isValidFacilityList(data.baseFacilities) &&
+             data.visibility == 'public' &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMosqueReview(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60 &&
+             isValidId(data.mosqueId) &&
+             data.mosqueName is string && data.mosqueName.size() >= 1 && data.mosqueName.size() <= 120 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             isValidFacilityList(data.facilities) &&
+             data.comment is string && data.comment.size() <= 600 &&
+             data.visibility == 'public' &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidFavoriteMosque(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             isValidId(data.mosqueId) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.address is string && data.address.size() <= 250 &&
+             (data.lat is float || data.lat is int) && data.lat >= -90 && data.lat <= 90 &&
+             (data.lon is float || data.lon is int) && data.lon >= -180 && data.lon <= 180 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // Community Custom Mosques
+    match /custom_mosques/{mosqueId} {
+      allow get: if isSignedIn() && isValidId(mosqueId) && existing().visibility == 'public';
+      allow list: if isSignedIn() && existing().visibility == 'public';
+
+      allow create: if isSignedIn() &&
+                       isValidId(mosqueId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'authorName', 'name', 'address',
+                         'lat', 'lon', 'baseFacilities', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'authorName', 'name', 'address',
+                         'lat', 'lon', 'baseFacilities', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidCustomMosque(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(mosqueId) &&
+                       isValidCustomMosque(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'address', 'baseFacilities', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() &&
+                       isValidId(mosqueId) &&
+                       existing().userId == request.auth.uid;
+    }
+
+    // Community Mosque Facility Reviews & Ratings
+    match /mosque_reviews/{reviewId} {
+      allow get: if isSignedIn() && isValidId(reviewId) && existing().visibility == 'public';
+      allow list: if isSignedIn() && existing().visibility == 'public';
+
+      allow create: if isSignedIn() &&
+                       isValidId(reviewId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'authorName', 'mosqueId', 'mosqueName',
+                         'rating', 'facilities', 'comment', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'authorName', 'mosqueId', 'mosqueName',
+                         'rating', 'facilities', 'comment', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidMosqueReview(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(reviewId) &&
+                       isValidMosqueReview(incoming()) &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().mosqueId == existing().mosqueId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'authorName', 'rating', 'facilities', 'comment', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() &&
+                       isValidId(reviewId) &&
+                       existing().userId == request.auth.uid;
+    }
+
+    // Private User Favorites Subcollection
+    match /users/{userId}/favorites/{mosqueId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(mosqueId);
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(mosqueId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().mosqueId == mosqueId &&
+                       incoming().keys().hasAll([
+                         'userId', 'mosqueId', 'name', 'address', 'lat', 'lon', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'mosqueId', 'name', 'address', 'lat', 'lon', 'createdAt'
+                       ]) &&
+                       isValidFavoriteMosque(incoming());
+
+      allow update: if false;
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(mosqueId);
+    }
+  }
+}

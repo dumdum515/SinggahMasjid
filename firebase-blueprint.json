@@ -1,0 +1,187 @@
+{
+  "entities": {
+    "CustomMosque": {
+      "title": "CustomMosque",
+      "description": "User-contributed mosque or musholla record not yet mapped in OpenStreetMap.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user who added this mosque."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Display name of the contributor."
+        },
+        "name": {
+          "type": "string",
+          "description": "Official or commonly known name of the mosque or musholla."
+        },
+        "address": {
+          "type": "string",
+          "description": "Street address or nearby landmark."
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude coordinate."
+        },
+        "lon": {
+          "type": "number",
+          "description": "Longitude coordinate."
+        },
+        "baseFacilities": {
+          "type": "array",
+          "description": "List of facility IDs confirmed when adding the mosque."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Public directory marker aligned with Firestore list queries."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (clients write FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (clients write FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "authorName",
+        "name",
+        "address",
+        "lat",
+        "lon",
+        "baseFacilities",
+        "visibility",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MosqueReview": {
+      "title": "MosqueReview",
+      "description": "User rating, facility verification checklist, and review notes for a visited mosque.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the reviewer."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Reviewer display name or nickname."
+        },
+        "mosqueId": {
+          "type": "string",
+          "description": "Identifier of the reviewed mosque (OSM or custom mosque ID)."
+        },
+        "mosqueName": {
+          "type": "string",
+          "description": "Name of the reviewed mosque."
+        },
+        "rating": {
+          "type": "integer",
+          "description": "Overall hospitality and facility rating from 1 to 5."
+        },
+        "facilities": {
+          "type": "array",
+          "description": "List of facility IDs confirmed by the reviewer during their visit."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Traveler review notes on cleanliness, overnight rules, drinks, or WiFi."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Public review marker aligned with Firestore list queries."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (clients write FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (clients write FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "authorName",
+        "mosqueId",
+        "mosqueName",
+        "rating",
+        "facilities",
+        "comment",
+        "visibility",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FavoriteMosque": {
+      "title": "FavoriteMosque",
+      "description": "A user's bookmarked favorite mosque for quick traveler access.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user."
+        },
+        "mosqueId": {
+          "type": "string",
+          "description": "Identifier of the bookmarked mosque."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the bookmarked mosque."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address or landmark of the bookmarked mosque."
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude coordinate."
+        },
+        "lon": {
+          "type": "number",
+          "description": "Longitude coordinate."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when bookmarked (clients write FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "mosqueId",
+        "name",
+        "address",
+        "lat",
+        "lon",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/custom_mosques/{mosqueId}": {
+      "schema": { "$ref": "#/entities/CustomMosque" },
+      "description": "Community-contributed mosques readable by signed-in users and editable only by their creator."
+    },
+    "/mosque_reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/MosqueReview" },
+      "description": "Community mosque facility reviews readable by signed-in users and editable/deletable only by their author."
+    },
+    "/users/{userId}/favorites/{mosqueId}": {
+      "schema": { "$ref": "#/entities/FavoriteMosque" },
+      "description": "Private per-user saved favorite mosques."
+    }
+  }
+}
